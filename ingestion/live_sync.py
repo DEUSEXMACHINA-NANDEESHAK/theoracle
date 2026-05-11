@@ -70,36 +70,39 @@ def fetch_and_build_draw(tournament_url, output_path=None):
     
     title = soup.find('h1')
     tourney_name = title.get_text().strip() if title else "Tournament"
-    # 2. Find the Draw Table
-    players_found = {} # name -> {seed, status}
+    # 2. Find the Main Results Table (Ignore sidebars/news)
+    players_found = {}
     
-    # News keyword blacklist to avoid headlines in the player list
-    blacklist = ['says', 'defeat', 'victory', 'set up', 'showdown', 'game', 'win', 'highlights', 'passes away', 'news', 'story']
+    # Target only the results table or draw container
+    main_container = soup.select_one('div#tournament-tab-draw, table.result, div.box-main')
+    if not main_container:
+        main_container = soup # Fallback to whole page
     
-    # Try multiple selectors to find player links
-    selectors = ['td.rtxt a', 'td.ltxt a', 'div.draw-table a']
+    # News and other tournament keywords to ignore
+    blacklist = ['challenger', 'itf', 'utr', 'wta', 'masters', 'open', 'today', 'rankings', 'results', 'news', 'story']
     
-    for selector in selectors:
-        player_links = soup.select(selector)
-        for link in player_links:
-            name = link.get_text().strip()
-            
-            # CLEANING & FILTERING
-            # 1. Skip tiny strings
-            if not name or len(name) < 4: continue
-            # 2. Skip long headlines (more than 3 words)
-            if len(name.split()) > 3: continue
-            # 3. Skip blacklist items
-            if any(word in name.lower() for word in blacklist): continue
-            # 4. Skip generic tournament names
-            if any(x in name.lower() for x in ['masters', 'open', 'atp', 'wta']): continue
-            
-            # Format usually "Lastname F." or "Firstname Lastname"
-            if name not in players_found:
-                players_found[name] = {"name": name, "seed": None, "status": "IN"}
+    # Specific selectors for player links
+    player_links = main_container.select('td.rtxt a, td.ltxt a')
+    
+    for link in player_links:
+        name = link.get_text().strip()
+        
+        # 1. Basic length check
+        if not name or len(name) < 4: continue
+        
+        # 2. Filter out other tournaments and headlines (very aggressive)
+        lower_name = name.lower()
+        if any(word in lower_name for word in blacklist): continue
+        if len(name.split()) > 2: continue # Most player names are "Lastname F." or "First Last"
+        
+        # 3. Skip names that contain numbers (dates/years)
+        if any(char.isdigit() for char in name): continue
+        
+        if name not in players_found:
+            players_found[name] = {"name": name, "seed": None, "status": "IN"}
 
     if not players_found:
-        print("⚠️  Warning: Scraper found 0 players. Check site structure.")
+        print("⚠️  Warning: No players found in main container. Check site structure.")
 
     # Update logic (simplified for speed)
     content = soup.get_text()
