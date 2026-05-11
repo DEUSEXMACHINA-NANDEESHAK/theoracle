@@ -47,7 +47,8 @@ class TennisXGBoost:
                 'eval_metric': 'logloss',
                 'early_stopping_rounds': 50,
                 'tree_method': 'auto',
-                'verbosity': 1,
+                'n_jobs': -1,  # Use all available CPU cores
+                'verbosity': 0,
             }
     
     def train(self, X_train, y_train, X_val=None, y_val=None, feature_cols=None, medians=None):

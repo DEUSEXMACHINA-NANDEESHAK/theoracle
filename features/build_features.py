@@ -69,70 +69,55 @@ def build_feature_store(clean_dir="data/clean", features_dir="data/features",
     # Process each match
     all_features = []
     
-    for idx, row in tqdm(matches.iterrows(), total=len(matches), desc="🔨 Building Features"):
+    # Pre-convert to list of dicts or objects for even faster access if needed
+    # but itertuples is the best balance of speed and readability
+    for row in tqdm(matches.itertuples(), total=len(matches), desc="🔨 Building Features"):
+        # Convert row to dict for engine compatibility
+        row_dict = row._asdict()
+        
         # ============================================
         # STEP 1: COMPUTE FEATURES (PRE-MATCH STATE)
         # ============================================
+        elo_feats = elo_engine.compute_features_for_match(row_dict)
+        stamina_feats = stamina_engine.compute_features_for_match(row_dict)
+        pressure_feats = pressure_engine.compute_features_for_match(row_dict)
+        momentum_feats = momentum_engine.compute_features_for_match(row_dict)
+        surface_feats = surface_engine.compute_features_for_match(row_dict)
+        env_feats = env_engine.compute_features_for_match(row_dict)
         
-        # Engine 1: ELO features
-        elo_feats = elo_engine.compute_features_for_match(row)
-        
-        # Engine 2: Stamina features
-        stamina_feats = stamina_engine.compute_features_for_match(row)
-        
-        # Engine 3: Pressure features
-        pressure_feats = pressure_engine.compute_features_for_match(row)
-        
-        # Engine 4: Momentum features
-        momentum_feats = momentum_engine.compute_features_for_match(row)
-        
-        # Engine 5: Surface tactics features
-        surface_feats = surface_engine.compute_features_for_match(row)
-        
-        # Engine 6: Environment features
-        env_feats = env_engine.compute_features_for_match(row)
-        
-        # Engine 7: Odds features (needs ELO expected prob for divergence)
-        elo_expected_a = elo_feats.get('elo_expected_a', None)
-        odds_feats = odds_engine.compute_features_for_match(row, elo_expected_a)
-        
-        # Rolling stats
-        rolling_feats = rolling_engine.compute_features_for_match(row)
+        elo_expected_a = elo_feats.get('elo_expected_a', 0.5)
+        odds_feats = odds_engine.compute_features_for_match(row_dict, elo_expected_a)
+        rolling_feats = rolling_engine.compute_features_for_match(row_dict)
         
         # Merge all features
         match_features = {
-            'match_id': row.get('match_id', idx),
-            'tourney_date': row['tourney_date'],
-            'surface': row['surface'],
-            'winner_is_a': row['winner_is_a'],  # TARGET variable
+            'match_id': getattr(row, 'match_id', row.Index),
+            'tourney_date': row.tourney_date,
+            'surface': row.surface,
+            'winner_is_a': row.winner_is_a,
         }
-        match_features.update(elo_feats)
-        match_features.update(stamina_feats)
-        match_features.update(pressure_feats)
-        match_features.update(momentum_feats)
-        match_features.update(surface_feats)
-        match_features.update(env_feats)
-        match_features.update(odds_feats)
-        match_features.update(rolling_feats)
+        # Update is faster than merging multiple dicts in a loop
+        for d in [elo_feats, stamina_feats, pressure_feats, momentum_feats, 
+                  surface_feats, env_feats, odds_feats, rolling_feats]:
+            match_features.update(d)
         
         all_features.append(match_features)
         
         # ============================================
         # STEP 2: UPDATE ENGINE STATES (POST-MATCH)
         # ============================================
+        winner_is_a = bool(row.winner_is_a)
         
-        winner_is_a = bool(row['winner_is_a'])
-        
-        elo_engine.update_after_match(row, winner_is_a)
-        stamina_engine.update_after_match(row)
-        pressure_engine.update_after_match(row, winner_is_a)
+        elo_engine.update_after_match(row_dict, winner_is_a)
+        stamina_engine.update_after_match(row_dict)
+        pressure_engine.update_after_match(row_dict, winner_is_a)
         momentum_engine.update_after_match(
-            row, winner_is_a,
+            row_dict, winner_is_a,
             opp_elo_a=elo_feats.get('elo_overall_b'),
             opp_elo_b=elo_feats.get('elo_overall_a'),
         )
-        surface_engine.update_after_match(row)
-        rolling_engine.update_after_match(row, winner_is_a)
+        surface_engine.update_after_match(row_dict)
+        rolling_engine.update_after_match(row_dict, winner_is_a)
     
     # Build DataFrame
     features_df = pd.DataFrame(all_features)

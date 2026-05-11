@@ -1,0 +1,23 @@
+{
+  "tournament": "Rome Masters 2026",
+  "surface": "Clay",
+  "current_round": "R32",
+  "players": [
+    {"name": "Jannik Sinner", "seed": 1, "status": "IN"},
+    {"name": "Qualifier 1", "seed": null, "status": "OUT"},
+    {"name": "Mariano Navone", "seed": 28, "status": "IN"},
+    {"name": "Hamad Medjedovic", "seed": null, "status": "IN"},
+    {"name": "Stefanos Tsitsipas", "seed": 6, "status": "IN"},
+    {"name": "Casper Ruud", "seed": 7, "status": "IN"},
+    {"name": "Alexander Zverev", "seed": 3, "status": "IN"},
+    {"name": "Daniil Medvedev", "seed": 4, "status": "IN"},
+    {"name": "Novak Djokovic", "seed": 8, "status": "IN"},
+    {"name": "Carlos Alcaraz", "seed": 2, "status": "IN"},
+    {"name": "Holger Rune", "seed": 12, "status": "IN"},
+    {"name": "Andrey Rublev", "seed": 5, "status": "IN"},
+    {"name": "Hubert Hurkacz", "seed": 10, "status": "IN"},
+    {"name": "Grigor Dimitrov", "seed": 9, "status": "IN"},
+    {"name": "Taylor Fritz", "seed": 11, "status": "IN"},
+    {"name": "Rafael Nadal", "seed": "PR", "status": "IN"}
+  ]
+}
