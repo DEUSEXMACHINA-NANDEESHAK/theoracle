@@ -35,6 +35,10 @@ class TournamentSimulator:
         # Filter out players already knocked out
         active_draw = [p for p in draw if p.get('status') != 'OUT']
         
+        if not active_draw:
+            print("⚠️  No active players found for simulation! Check your draw source.")
+            return None
+            
         if surface not in self.models:
             print(f"⚠️  No model for {surface}. Using random predictions.")
             return None
@@ -43,7 +47,11 @@ class TournamentSimulator:
         n_players = len(active_draw)
         
         # Determine current round based on remaining players
-        rounds = int(np.ceil(np.log2(n_players)))
+        # Handle cases with 1 player (winner)
+        if n_players <= 1:
+            rounds = 0
+        else:
+            rounds = int(np.ceil(np.log2(n_players)))
         round_names = self._get_round_names(rounds)
         
         print(f"\n🏆 Live Simulation: {surface} | {n_players} players remaining")

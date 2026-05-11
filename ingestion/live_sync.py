@@ -70,20 +70,30 @@ def fetch_and_build_draw(tournament_url, output_path=None):
     
     title = soup.find('h1')
     tourney_name = title.get_text().strip() if title else "Tournament"
+    # 2. Find the Draw Table
+    players_found = {} # name -> {seed, status}
     
-    # Path logic
-    if not output_path:
-        slug = tournament_url.split('/')[-3] if tournament_url.endswith('/') else tournament_url.split('/')[-2]
-        output_path = f"draws/{slug}.json"
+    # Try multiple selectors to find player links
+    selectors = [
+        'td.rtxt a', 'td.ltxt a', # Standard matches
+        'div.draw-table a',       # Draw bracket
+        'table.result a'          # Results table
+    ]
+    
+    for selector in selectors:
+        player_links = soup.select(selector)
+        for link in player_links:
+            name = link.get_text().strip()
+            # Filter out tournament names, dates, or tiny strings
+            if not name or len(name) < 4 or any(x in name.lower() for x in ['masters', 'open', '202', 'atp']):
+                continue
+            
+            if name not in players_found:
+                players_found[name] = {"name": name, "seed": None, "status": "IN"}
 
-    players_found = {}
-    player_links = soup.select('td.rtxt a, td.ltxt a')
-    
-    for link in player_links:
-        name = link.get_text().strip()
-        if not name or len(name) < 3: continue
-        if name not in players_found:
-            players_found[name] = {"name": name, "seed": None, "status": "IN"}
+    if not players_found:
+        print("⚠️  Warning: Scraper found 0 players. Page structure might have changed.")
+        print(f"   Debug: Content length is {len(soup.get_text())}")
 
     # Update logic (simplified for speed)
     content = soup.get_text()
