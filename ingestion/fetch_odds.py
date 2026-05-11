@@ -114,6 +114,19 @@ def load_odds_data(raw_dir="data/raw/odds", year_start=2005, year_end=2026):
     
     combined = pd.concat(all_dfs, ignore_index=True)
     
+    # PERMANENT FIX: Ultra-aggressive data sanitation
+    import numpy as np
+    print("🧹 Ultra-sanitizing betting data (removing all dashes and invalid text)...")
+    
+    # 1. Globally replace '-' and empty strings with NaN
+    combined = combined.replace(['-', '', ' ', 'nan', 'NaN'], np.nan)
+    
+    # 2. Force all betting columns to numeric
+    odds_keywords = ['w', 'l', 'avg', 'max', 'b365', 'ps', 'bw', 'iw', 'lb', 'ex', 'sb', 'sj', 'gb', 'ub']
+    for col in combined.columns:
+        if any(key in col.lower() for key in odds_keywords):
+            combined[col] = pd.to_numeric(combined[col], errors='coerce')
+    
     # Standardize column names (tennis-data.co.uk uses various conventions)
     col_map = {
         'Winner': 'winner_name',
