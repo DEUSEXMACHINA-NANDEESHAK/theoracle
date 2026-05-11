@@ -137,7 +137,7 @@ def _normalize_single_source(df, source='atp'):
     
     # ---- Tournament metadata ----
     df['tourney_level'] = df.get('tourney_level', pd.Series('A', index=df.index))
-    df['best_of'] = pd.to_numeric(df.get('best_of', pd.Series(3, index=df.index)), errors='coerce').fillna(3).astype(int)
+    df['best_of'] = pd.to_numeric(df.get('best_of', pd.Series(3, index=df.index)), errors='coerce').fillna(3).replace(0, 3).astype(int)
     
     # Parse round
     round_order = {'F': 7, 'SF': 6, 'QF': 5, 'R16': 4, 'R32': 3, 'R64': 2, 'R128': 1, 'RR': 3}

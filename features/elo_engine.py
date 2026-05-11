@@ -125,7 +125,7 @@ def compute_k_factor(matches_played, tourney_level, days_inactive,
     if sets_played is not None and total_possible_sets is not None and total_possible_sets > 0:
         # Straight sets win = sets_played / total = 2/3 or 3/5
         # Factor = 1 + bonus * (1 - ratio)
-        ratio = sets_played / total_possible_sets
+        ratio = min(sets_played / total_possible_sets, 1.0)
         margin_factor = 1.0 + kf['margin_of_victory_bonus'] * (1 - ratio)
     
     return base_k * level_mult * inactivity_boost * margin_factor
@@ -422,18 +422,28 @@ class TennisEloEngine:
         
         return elo_features_df
     
-    def get_player_ratings(self, top_n=50):
-        """Get current top players by overall ELO."""
-        ratings = []
+    def get_player_ratings(self, clean_dir="data/clean", top_n=20):
+        """Get current top players with names."""
+        data = []
+        
+        # Try to load player names for display
+        names = {}
+        try:
+            players_df = pd.read_parquet(f"{clean_dir}/players.parquet")
+            names = dict(zip(players_df['player_id'], players_df['name_last'] + ", " + players_df['name_first']))
+        except: pass
+
         for pid, state in self.players.items():
-            if state.matches_played >= 20:
-                ratings.append({
-                    'player_id': pid,
-                    'elo_overall': state.elo_overall,
-                    'elo_clay': state.elo_surface['Clay'],
-                    'elo_grass': state.elo_surface['Grass'],
-                    'elo_hard': state.elo_surface['Hard'],
-                    'matches': state.matches_played,
-                })
-        df = pd.DataFrame(ratings).sort_values('elo_overall', ascending=False)
-        return df.head(top_n)
+            if state.matches_played < 20: continue
+            data.append({
+                'name': names.get(pid, f"ID:{pid}"),
+                'elo_overall': state.elo_overall,
+                'elo_clay': state.elo_surface.get('Clay', 1500),
+                'elo_grass': state.elo_surface.get('Grass', 1500),
+                'elo_hard': state.elo_surface.get('Hard', 1500),
+                'matches': state.matches_played
+            })
+        
+        df = pd.DataFrame(data)
+        if len(df) == 0: return df
+        return df.sort_values('elo_overall', ascending=False).head(top_n)
