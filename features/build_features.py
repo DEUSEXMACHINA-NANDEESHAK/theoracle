@@ -158,7 +158,7 @@ def build_feature_store(clean_dir="data/clean", features_dir="data/features",
     
     # Print top ELO rankings as a sanity check
     print("\n🏆 Current Top 20 by ELO:")
-    top = elo_engine.get_player_ratings(20)
+    top = elo_engine.get_player_ratings(clean_dir=clean_dir, top_n=20)
     print(top.to_string(index=False))
     
     return features_df
