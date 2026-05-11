@@ -73,27 +73,33 @@ def fetch_and_build_draw(tournament_url, output_path=None):
     # 2. Find the Draw Table
     players_found = {} # name -> {seed, status}
     
+    # News keyword blacklist to avoid headlines in the player list
+    blacklist = ['says', 'defeat', 'victory', 'set up', 'showdown', 'game', 'win', 'highlights', 'passes away', 'news', 'story']
+    
     # Try multiple selectors to find player links
-    selectors = [
-        'td.rtxt a', 'td.ltxt a', # Standard matches
-        'div.draw-table a',       # Draw bracket
-        'table.result a'          # Results table
-    ]
+    selectors = ['td.rtxt a', 'td.ltxt a', 'div.draw-table a']
     
     for selector in selectors:
         player_links = soup.select(selector)
         for link in player_links:
             name = link.get_text().strip()
-            # Filter out tournament names, dates, or tiny strings
-            if not name or len(name) < 4 or any(x in name.lower() for x in ['masters', 'open', '202', 'atp']):
-                continue
             
+            # CLEANING & FILTERING
+            # 1. Skip tiny strings
+            if not name or len(name) < 4: continue
+            # 2. Skip long headlines (more than 3 words)
+            if len(name.split()) > 3: continue
+            # 3. Skip blacklist items
+            if any(word in name.lower() for word in blacklist): continue
+            # 4. Skip generic tournament names
+            if any(x in name.lower() for x in ['masters', 'open', 'atp', 'wta']): continue
+            
+            # Format usually "Lastname F." or "Firstname Lastname"
             if name not in players_found:
                 players_found[name] = {"name": name, "seed": None, "status": "IN"}
 
     if not players_found:
-        print("⚠️  Warning: Scraper found 0 players. Page structure might have changed.")
-        print(f"   Debug: Content length is {len(soup.get_text())}")
+        print("⚠️  Warning: Scraper found 0 players. Check site structure.")
 
     # Update logic (simplified for speed)
     content = soup.get_text()

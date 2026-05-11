@@ -106,9 +106,30 @@ class TournamentSimulator:
         
         results_df = pd.DataFrame(results).sort_values('Win Tournament', ascending=False)
         
-        print(f"\n🏆 THE ORACLE'S LIVE CONTENDERS:")
+        # Print top contenders
+        print(f"\n🏆 THE ORACLE'S TOP CONTENDERS TO WIN:")
         cols = ['player_name', 'Win Tournament'] + [round_names[-1], round_names[-2]]
         print(results_df[cols].head(10).to_string(index=False, formatters={'Win Tournament': '{:.1%}'.format}))
+        
+        # Print NEXT ROUND matchups (if tournament not over)
+        if rounds > 0:
+            print(f"\n🎾 PREDICTED NEXT ROUND MATCHUPS ({round_names[1]}):")
+            print(f"{'Player A':25s} vs {'Player B':25s} | {'Oracle Choice':20s}")
+            print(f"{'─'*75}")
+            
+            for i in range(0, len(active_draw), 2):
+                if i + 1 >= len(active_draw): break
+                p1 = active_draw[i]['name']
+                p2 = active_draw[i+1]['name']
+                
+                # Predict this specific match
+                prob_a = self._predict_match(active_draw[i], active_draw[i+1], surface, model, feature_store_df)
+                winner = p1 if prob_a > 0.5 else p2
+                conf = max(prob_a, 1-prob_a)
+                
+                print(f"{p1[:24]:25s} vs {p2[:24]:25s} | {winner[:18]:18s} ({conf:.1%})")
+        
+        print(f"\n🥇 TOURNAMENT WINNER PREDICTION: {results_df.iloc[0]['player_name']} ({results_df.iloc[0]['Win Tournament']:.1%})")
         
         return results_df
     
