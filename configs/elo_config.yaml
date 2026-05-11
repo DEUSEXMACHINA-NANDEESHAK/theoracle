@@ -1,0 +1,52 @@
+# ===== TheOracle: Tennis-Specific ELO Configuration =====
+
+# Initial rating for new players
+initial_rating: 1500
+
+# K-factor formula: K = base_k_numerator / ((matches + base_k_offset) ^ base_k_exponent)
+k_factor:
+  base_k_numerator: 250
+  base_k_offset: 5
+  base_k_exponent: 0.4
+
+  # Tournament level multipliers for K-factor
+  # Grand Slams are most informative, challengers least
+  level_multipliers:
+    G: 1.30    # Grand Slams
+    M: 1.10    # Masters 1000
+    A: 1.00    # ATP 500/250
+    D: 0.90    # Davis Cup
+    C: 0.80    # Challengers
+    Q: 0.75    # Qualifying
+
+  # Inactivity: if player hasn't played in >60 days, boost K
+  inactivity_threshold_days: 60
+  inactivity_max_boost: 0.8  # max 80% K increase after 1+ year away
+
+  # Margin of victory: straight sets win is more informative
+  # Factor = 1 + mov_bonus * (1 - sets_played / total_possible_sets)
+  margin_of_victory_bonus: 0.2
+
+# Best-of-3 vs Best-of-5 adjustment
+# In BO5, the better player wins more often
+# We scale expected score accordingly
+bo5_advantage_factor: 1.05
+
+# H2H adjustment to expected score
+h2h:
+  min_matches: 3          # Minimum H2H meetings to activate
+  max_weight: 0.15        # Maximum influence of H2H (15%)
+  weight_denominator: 20  # Weight = min(total_h2h / denom, max_weight)
+
+# Aging curve: slight ELO drag after this age
+aging:
+  onset_age: 32
+  drag_per_year: 5  # ELO points deducted per year after onset
+
+# Surface blending weights for elo_weighted track
+# Blend = alpha * elo_surface + (1-alpha) * elo_overall
+surface_blend_alpha: 0.6
+
+# Recent ELO window sizes
+recent_overall_window: 20   # Last N matches for elo_recent
+recent_surface_window: 10   # Last N surface matches for elo_recent_surface

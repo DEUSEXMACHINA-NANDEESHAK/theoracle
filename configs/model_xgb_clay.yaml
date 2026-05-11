@@ -1,0 +1,25 @@
+# ===== TheOracle: XGBoost Clay Model Configuration =====
+
+model_name: "xgb_clay"
+surface: "Clay"
+
+hyperparameters:
+  n_estimators: 600
+  max_depth: 6
+  learning_rate: 0.045
+  subsample: 0.80
+  colsample_bytree: 0.75
+  reg_lambda: 1.2        # L2 regularization
+  reg_alpha: 0.15         # L1 regularization
+  min_child_weight: 4
+  gamma: 0.1              # Min loss reduction for split
+  scale_pos_weight: 1.0
+  eval_metric: "logloss"
+  early_stopping_rounds: 50
+  tree_method: "auto"     # Will use gpu_hist if GPU available
+  verbosity: 1
+
+# Clay-specific notes:
+# - Longer rallies → stamina/fatigue features more important
+# - Surface specialists (Nadal, Ruud) dominate → surface ELO delta key
+# - Clay reduces serve dominance → return stats matter more

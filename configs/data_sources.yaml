@@ -1,0 +1,37 @@
+# ===== TheOracle: Data Source Configuration =====
+
+sackmann:
+  base_url: "https://raw.githubusercontent.com/JeffSackmann/tennis_atp/master"
+  players_file: "atp_players.csv"
+  matches_pattern: "atp_matches_{year}.csv"
+  qual_chall_pattern: "atp_matches_qual_chall_{year}.csv"
+  rankings_pattern: "atp_rankings_{decade}s.csv"
+  rankings_current: "atp_rankings_current.csv"
+  # Years for ELO warm-up (not in training set)
+  warmup_years: [2000, 2001, 2002, 2003, 2004]
+  # Years for actual training + evaluation
+  data_years_start: 2005
+  data_years_end: 2026
+
+odds:
+  # tennis-data.co.uk provides free historical betting odds
+  base_url: "http://www.tennis-data.co.uk"
+  # Pattern: {year}/{tournament_code}.xlsx
+  years_start: 2005
+  years_end: 2026
+  # Columns to extract
+  odds_columns: ["B365W", "B365L", "PSW", "PSL", "AvgW", "AvgL"]
+  # Pinnacle odds are considered most efficient
+  primary_odds: ["PSW", "PSL"]
+  fallback_odds: ["B365W", "B365L"]
+
+weather:
+  # OpenMeteo free API (no key needed)
+  base_url: "https://archive-api.open-meteo.com/v1/archive"
+  variables: ["temperature_2m_mean", "relative_humidity_2m_mean", "wind_speed_10m_max"]
+
+paths:
+  raw_dir: "data/raw"
+  clean_dir: "data/clean"
+  features_dir: "data/features"
+  models_dir: "models/artifacts"

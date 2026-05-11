@@ -1,0 +1,26 @@
+# ===== TheOracle: XGBoost Grass Model Configuration =====
+
+model_name: "xgb_grass"
+surface: "Grass"
+
+hyperparameters:
+  n_estimators: 500
+  max_depth: 5
+  learning_rate: 0.05
+  subsample: 0.85
+  colsample_bytree: 0.80
+  reg_lambda: 1.5         # Stronger regularization (less grass data)
+  reg_alpha: 0.2
+  min_child_weight: 5
+  gamma: 0.15
+  scale_pos_weight: 1.0
+  eval_metric: "logloss"
+  early_stopping_rounds: 50
+  tree_method: "auto"
+  verbosity: 1
+
+# Grass-specific notes:
+# - Much less data (short grass season) → stronger regularization needed
+# - Serve dominance is key → ace_rate, first_serve_won critical
+# - Fewer rallies → stamina less important, serve/return stats crucial
+# - Surface specialists exist (Berrettini, old Federer)

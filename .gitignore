@@ -1,0 +1,42 @@
+# Data files (large)
+data/raw/
+data/clean/
+data/features/
+*.parquet
+*.xlsx
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Models
+models/artifacts/
+*.pkl
+*.joblib
+*.json.gz
+
+# Environment
+.env
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Node (legacy)
+node_modules/
