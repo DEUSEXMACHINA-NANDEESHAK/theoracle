@@ -147,8 +147,16 @@ def load_players(raw_dir="data/raw/sackmann"):
         raise FileNotFoundError(f"Player file not found: {fpath}")
     
     players = pd.read_csv(fpath, low_memory=False)
-    # Clean up birth_date
-    players['birth_date'] = pd.to_numeric(players['birth_date'], errors='coerce')
+    
+    # Handle different column name variations for birth date
+    for col in ['birthdate', 'dob', 'birth_date']:
+        if col in players.columns:
+            players = players.rename(columns={col: 'birth_date'})
+            break
+    
+    if 'birth_date' in players.columns:
+        players['birth_date'] = pd.to_numeric(players['birth_date'], errors='coerce')
+    
     print(f"📦 Loaded {len(players):,} players")
     return players
 

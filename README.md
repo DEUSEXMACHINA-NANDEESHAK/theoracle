@@ -18,40 +18,48 @@ Inspired by [Green Code's YouTube series](https://www.youtube.com/watch?v=LkJpNL
 ## 🚀 Quick Start (Google Colab)
 
 ### Step 1: Setup
+
 ```python
 # Install dependencies
 !pip install -q xgboost scikit-learn pandas numpy matplotlib seaborn shap pyyaml requests beautifulsoup4 pyarrow tqdm openpyxl
 
 # Clone repo
-!git clone https://github.com/YOUR_USERNAME/theoracle.git
+!git clone https://github.com/DEUSEXMACHINA-NANDEESHAK/theoracle.git
+
+# Change directory
 %cd theoracle
 ```
 
 ### Step 2: Download Data (~5 min)
+
 ```python
 from ingestion.pipeline import run_full_ingestion
 matches, players, odds = run_full_ingestion(skip_weather=True)
 ```
 
 ### Step 3: Build Features (~10 min)
+
 ```python
 from features.build_features import build_feature_store
 features = build_feature_store()
 ```
 
 ### Step 4: Train Models (~5 min with GPU)
+
 ```python
 from models.train import train_all_models
 models, results = train_all_models()
 ```
 
 ### Step 5: Evaluate
+
 ```python
 from models.evaluate import full_evaluation
 full_evaluation(plot=True)
 ```
 
 ### Step 6: Predict Tournament
+
 ```python
 from models.tournament_sim import simulate_tournament
 simulate_tournament("Wimbledon 2026", surface="Grass", n_simulations=5000)
@@ -71,19 +79,20 @@ theoracle/
 
 ## 🎯 Feature Engines
 
-| Engine | Features | Key Signal |
-|--------|----------|-----------|
-| **ELO** | 7-track ratings, H2H, aging, margin-of-victory | Core skill estimation |
-| **Stamina** | Rest days, match density, fatigue index | Physical state |
-| **Pressure** | Break points, tiebreaks, comebacks | Mental toughness |
-| **Momentum** | Streaks, EWMA confidence, ELO trend | Current form |
-| **Surface** | Serve/return profiles, clay grind, grass serve | Play style fit |
-| **Environment** | Weather, altitude, home advantage, rankings | Match context |
-| **Odds** | Implied probabilities, market divergence | Reference band |
+| Engine          | Features                                       | Key Signal            |
+| --------------- | ---------------------------------------------- | --------------------- |
+| **ELO**         | 7-track ratings, H2H, aging, margin-of-victory | Core skill estimation |
+| **Stamina**     | Rest days, match density, fatigue index        | Physical state        |
+| **Pressure**    | Break points, tiebreaks, comebacks             | Mental toughness      |
+| **Momentum**    | Streaks, EWMA confidence, ELO trend            | Current form          |
+| **Surface**     | Serve/return profiles, clay grind, grass serve | Play style fit        |
+| **Environment** | Weather, altitude, home advantage, rankings    | Match context         |
+| **Odds**        | Implied probabilities, market divergence       | Reference band        |
 
 ## ⚠️ Leakage Prevention
 
 Every feature is computed using ONLY pre-match data. The strict protocol:
+
 1. **Compute** features (pre-match state)
 2. **Store** feature row
 3. **Update** engine states (post-match result)

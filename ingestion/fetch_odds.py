@@ -2,6 +2,7 @@
 # ===== CELL 1: Imports =====
 
 import os
+import sys
 import pandas as pd
 import requests
 from tqdm import tqdm
@@ -88,8 +89,18 @@ def load_odds_data(raw_dir="data/raw/odds", year_start=2005, year_end=2026):
                 try:
                     if ext == 'csv':
                         df = pd.read_csv(fpath, low_memory=False)
+                    elif ext == 'xls':
+                        # Legacy Excel format
+                        try:
+                            df = pd.read_excel(fpath, engine='xlrd')
+                        except ImportError:
+                            print("  [INFO] Installing xlrd for legacy Excel support...")
+                            import subprocess
+                            subprocess.check_call([sys.executable, "-m", "pip", "install", "xlrd"])
+                            df = pd.read_excel(fpath, engine='xlrd')
                     else:
-                        df = pd.read_excel(fpath, engine='openpyxl' if ext == 'xlsx' else None)
+                        # Modern Excel format
+                        df = pd.read_excel(fpath, engine='openpyxl')
                     
                     df['source_year'] = year
                     all_dfs.append(df)
