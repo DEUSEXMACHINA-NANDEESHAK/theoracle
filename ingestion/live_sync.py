@@ -3,87 +3,109 @@ from bs4 import BeautifulSoup
 import json
 import os
 import re
+from datetime import datetime
 
-def sync_rome_draw(json_path="draws/rome_2026.json"):
+def search_tournament_url(tournament_name):
     """
-    Scrapes TennisExplorer for Rome 2026 results and updates the JSON.
+    Searches TennisExplorer for a tournament by name and returns its URL.
     """
-    url = "https://www.tennisexplorer.com/rome-masters/2026/atp-men/"
+    search_query = tournament_name.replace(" ", "+")
+    # TennisExplorer's internal search often requires specific cookies, 
+    # so we'll use a direct name-matching approach on their list page or 
+    # try to guess the URL pattern which is very consistent.
+    
+    year = datetime.now().year
+    slug = tournament_name.lower().replace(" ", "-").replace("masters", "").strip("-")
+    
+    # Common variations
+    candidates = [
+        f"https://www.tennisexplorer.com/{slug}-masters/{year}/atp-men/",
+        f"https://www.tennisexplorer.com/{slug}/{year}/atp-men/",
+        f"https://www.tennisexplorer.com/{slug}-open/{year}/atp-men/",
+    ]
+    
     headers = {'User-Agent': 'Mozilla/5.0'}
     
-    print(f"🌐 Fetching live results from {url}...")
+    print(f"🔍 Searching for '{tournament_name}'...")
+    
+    for url in candidates:
+        try:
+            response = requests.get(url, headers=headers, timeout=5)
+            if response.status_code == 200:
+                print(f"✨ Found tournament URL: {url}")
+                return url
+        except:
+            continue
+            
+    # If guessing fails, try to scrape the "This week's tournaments" section
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        home_url = "https://www.tennisexplorer.com/"
+        res = requests.get(home_url, headers=headers)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        links = soup.select('div.box.shadow.box-gray a') # Matches in the sidebar
+        for link in links:
+            if slug in link.get_text().lower():
+                found_url = "https://www.tennisexplorer.com" + link['href']
+                print(f"✨ Found in live sidebar: {found_url}")
+                return found_url
+    except:
+        pass
+
+    return None
+
+def fetch_and_build_draw(tournament_url, output_path=None):
+    """
+    Existing logic to scrape the draw from a URL.
+    """
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    try:
+        response = requests.get(tournament_url, headers=headers, timeout=15)
         response.raise_for_status()
     except Exception as e:
-        print(f"❌ Scraper failed: {e}")
-        return
+        print(f"❌ HTTP Error: {e}")
+        return None
 
     soup = BeautifulSoup(response.text, 'html.parser')
     
-    # Find all matches (usually in tables with class 'result')
-    matches = soup.find_all('tr', id=re.compile(r'r\d+'))
+    title = soup.find('h1')
+    tourney_name = title.get_text().strip() if title else "Tournament"
     
-    # Extract winners and losers from the page
-    # Heuristic: The player with a link in a 'result' table is usually the winner 
-    # or we check the score colors.
-    results = {} # name -> status ('IN' or 'OUT')
+    # Path logic
+    if not output_path:
+        slug = tournament_url.split('/')[-3] if tournament_url.endswith('/') else tournament_url.split('/')[-2]
+        output_path = f"draws/{slug}.json"
+
+    players_found = {}
+    player_links = soup.select('td.rtxt a, td.ltxt a')
     
-    # For simulation purposes in 2026, we'll look for specific strings in the 
-    # mock news or results if the site doesn't have the 2026 table yet.
+    for link in player_links:
+        name = link.get_text().strip()
+        if not name or len(name) < 3: continue
+        if name not in players_found:
+            players_found[name] = {"name": name, "seed": None, "status": "IN"}
+
+    # Update logic (simplified for speed)
     content = soup.get_text()
-    
-    # Load current draw
-    if not os.path.exists(json_path):
-        print(f"❌ JSON not found at {json_path}")
-        return
-        
-    with open(json_path, 'r') as f:
-        draw_data = json.load(f)
-
-    updates = 0
-    for player in draw_data['players']:
-        if player['status'] == 'OUT':
-            continue # Already out
-            
-        # Check if player is mentioned as having lost
-        # Example patterns: "X defeated Y", "Y lost to X"
-        name = player['name']
+    for name in players_found:
         last_name = name.split()[-1]
-        
-        # This is a robust substring check for the demo
-        # In production, you'd parse the actual <table> structure
-        lost_patterns = [
-            f"lost to {last_name}",
-            f"defeated by {last_name}",
-            f"{last_name} lost"
-        ]
-        
-        # Check for winner patterns
-        win_patterns = [
-            f"defeated {last_name}",
-            f"beat {last_name}",
-            f"{last_name} advances",
-            f"{last_name} won"
-        ]
+        if f"{last_name} lost" in content or "defeated by" in content.lower():
+            players_found[name]['status'] = 'OUT'
 
-        # MOCK LOGIC for the 2026 simulation date (May 11)
-        # Based on my search results: Navone and Medjedovic results are coming in.
-        if "Navone" in name and "Navone defeats" in content:
-             player['status'] = 'IN'
-        elif "Medjedovic" in name and "Medjedovic lost" in content:
-             player['status'] = 'OUT'
-             updates += 1
-        elif "Qualifier" in name:
-             player['status'] = 'OUT'
-             updates += 1
+    data = {
+        "tournament": tourney_name,
+        "surface": "Clay" if "rome" in tournament_url.lower() or "garros" in tournament_url.lower() else "Hard",
+        "last_updated": str(datetime.now()),
+        "players": list(players_found.values())
+    }
 
-    if updates > 0:
-        with open(json_path, 'w') as f:
-            json.dump(draw_data, f, indent=2)
-        print(f"✅ Updated {updates} player statuses in {json_path}")
-    else:
-        print("ℹ️ No new results found since last sync.")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, 'w') as f:
+        json.dump(data, f, indent=2)
+    
+    return data
 
 if __name__ == "__main__":
-    sync_rome_draw()
+    url = search_tournament_url("Rome Masters")
+    if url:
+        fetch_and_build_draw(url)

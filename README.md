@@ -58,11 +58,15 @@ from models.evaluate import full_evaluation
 full_evaluation(plot=True)
 ```
 
-### Step 6: Predict Tournament
+### Step 6: Universal Live Prediction
+Predict ANY ongoing tournament by its name or URL.
 
-```python
-from models.tournament_sim import simulate_tournament
-simulate_tournament("Wimbledon 2026", surface="Grass", n_simulations=5000)
+```bash
+# NEW: Search by Name (The Oracle will find the URL for you)
+python predict_live.py --query "Rome Masters"
+
+# OR use a direct URL
+python predict_live.py --url "https://www.tennisexplorer.com/rome-masters/2026/atp-men/"
 ```
 
 ## 📁 Project Structure
